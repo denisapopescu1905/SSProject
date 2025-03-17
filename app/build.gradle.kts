@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.ss_final_java"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.ss_final_java"
@@ -43,6 +43,10 @@ dependencies {
 
     implementation ("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
 
+
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation ("androidx.camera:camera-lifecycle:1.4.1")
+    implementation ("androidx.camera:camera-view:1.5.0-alpha06")
 
 
 }
