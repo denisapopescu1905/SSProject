@@ -47,6 +47,7 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.4.1")
     implementation ("androidx.camera:camera-lifecycle:1.4.1")
     implementation ("androidx.camera:camera-view:1.5.0-alpha06")
+    implementation("org.bouncycastle:bcpkix-jdk15on:1.59")
 
 
 }

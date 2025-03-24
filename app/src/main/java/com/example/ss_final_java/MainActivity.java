@@ -1,52 +1,70 @@
 package com.example.ss_final_java;
 
-import android.Manifest;
+import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
+import android.view.View;
+import android.Manifest;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.annotation.OptIn;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.Camera;
-import androidx.camera.core.ExperimentalGetImage;
-import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
-import androidx.camera.core.Preview;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.*;
+import androidx.core.content.FileProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.*;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "MQTT";
-    private static final String BROKER = "tcp://192.168.1.110:8883";
+    public static final String TAG = "CameraApp";
+    private static final int REQUEST_CAMERA_PERMISSION_CODE = 1;
+    private Uri photoUri;
+    private ImageView imageView;
+
+    private static final String BROKER = "ssl://192.168.1.110:8883";
     private static final String CLIENT_ID = "demo_client";
     private static final String TOPIC = "test/topic";
     private static final int SUB_QOS = 1;
     private static final int PUB_QOS = 1;
     private static final String MESSAGE = "Hello MQTT";
 
-    private MqttAndroidClient mqttClient;
-    private ImageCapture imageCapture;
+    private MqttHandler mqttHandler;
+
+
+    // Camera launcher using Activity Result API
+    private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    imageView.setImageURI(photoUri); // Display the captured image
+                    saveImageToGallery(photoUri); // Save the image to the gallery
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,43 +72,70 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Log.d(TAG, "START");
 
-        Button takePictureButton = findViewById(R.id.openCameraButton);
+        imageView = findViewById(R.id.image_view);
+        Button captureButton = findViewById(R.id.button_capture);
+        captureButton.setOnClickListener(this::captureImage);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
-        }
+        mqttHandler = new MqttHandler(this);
+        mqttHandler.connect(BROKER, CLIENT_ID);
 
-        takePictureButton.setOnClickListener(v -> {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                startCamera();  // Start the camera when the button is clicked
-            } else {
-                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // mqttClient = new MqttAndroidClient(getApplicationContext(), BROKER, CLIENT_ID);
-        // MqttConnectOptions options = new MqttConnectOptions();
-        // options.setCleanSession(true);  // Set clean session (no retained data between reconnects)
-        // connectToBroker(options);
     }
 
+    private void captureImage(View view) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_CAMERA_PERMISSION_CODE);
+            return;
+        }
 
-    private void connectToBroker(MqttConnectOptions options) {
+        // Create a file for the full-resolution image
+        File photoFile = createImageFile();
+        if (photoFile != null) {
+            // Get the Uri of the file to pass it in the intent
+            photoUri = FileProvider.getUriForFile(this,
+                    "com.example.ss_final_java.fileprovider", photoFile);
+
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri); // Set the URI where the image will be saved
+            cameraLauncher.launch(intent);
+        }
+    }
+
+   /* private void connectToBroker() {
+        MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
+        mqttConnectOptions.setAutomaticReconnect(true);
+        mqttConnectOptions.setCleanSession(false);
+        mqttConnectOptions.setUserName("");
+        mqttConnectOptions.setPassword("".toCharArray());
+        // Log the connection options for debugging purposes
+        Log.d(TAG, "Connecting with options: Clean Session = " + mqttConnectOptions.isCleanSession()
+                + ", Timeout = " + mqttConnectOptions.getConnectionTimeout()
+                + ", Keep-Alive Interval = " + mqttConnectOptions.getKeepAliveInterval() + "aaa" + mqttClient.getClientId());
         try {
-            mqttClient.connect(options, null, new IMqttActionListener() {
+            Log.d(TAG, "Connecting to MQTT broker...");
+            mqttClient.connect(mqttConnectOptions, null, new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
-                    Log.d(TAG, "Successfully connected to broker");
-                    subscribeToTopic();
+                    Log.d(TAG, "Successfully connected to MQTT broker");
+                    // Once connected, you can subscribe to topics or publish messages
+                    subscribeToTopic();  // Subscribe to a topic after successful connection
                 }
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    Log.e(TAG, "Connection failed: " + exception.getMessage());
+                    if (exception != null) {
+                        Log.e(TAG, "Failed to connect to MQTT broker: " + exception.getMessage(), exception);
+                    } else {
+                        Log.e(TAG, "Connection failed with return code: " + asyncActionToken.getClient());
+                    }
                 }
             });
         } catch (MqttException e) {
             e.printStackTrace();
+            Log.e(TAG, "Error connecting to MQTT broker", e);
         }
     }
 
@@ -100,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "Subscribed to topic: " + TOPIC);
             publishMessage();
         } catch (MqttException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error subscribing to topic", e);
         }
     }
 
@@ -111,109 +156,97 @@ public class MainActivity extends AppCompatActivity {
             mqttClient.publish(TOPIC, message);
             Log.d(TAG, "Message published: " + MESSAGE);
         } catch (MqttException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error publishing message", e);
         }
-    }
+    }*/
 
-    private void startCamera() {
-        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-        cameraProviderFuture.addListener(() -> {
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-
-                PreviewView previewView = findViewById(R.id.previewView);
-
-                Preview preview = new Preview.Builder().build();
-
-                preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-                imageCapture = new ImageCapture.Builder().build();
-
-                CameraSelector cameraSelector = new CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                        .build();
-
-                cameraProvider.unbindAll();
-
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
-
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }, ContextCompat.getMainExecutor(this));
-    }
-
-    private void captureImage() {
-        if (imageCapture != null) {
-            imageCapture.takePicture(ContextCompat.getMainExecutor(this), new ImageCapture.OnImageCapturedCallback() {
-                @Override
-                public void onCaptureSuccess(androidx.camera.core.ImageProxy image) {
-                    super.onCaptureSuccess(image);
-                    Log.d(TAG, "Image captured successfully");
-                    processAndSaveImage(image);
-                }
-
-                @Override
-                public void onError(ImageCaptureException exc) {
-                    super.onError(exc);
-                    Log.e(TAG, "Image capture failed: " + exc.getMessage());
-                }
-            });
-        }
-    }
-
-    private void processAndSaveImage(androidx.camera.core.ImageProxy image) {
-        @OptIn(markerClass = ExperimentalGetImage.class) android.media.Image mediaImage = image.getImage();
-        ByteBuffer buffer = mediaImage.getPlanes()[0].getBuffer();
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
-
-        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-
-        Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, 800, 600, false);  // Resize to 800x600
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream);  // Compress the image to 80% quality
-
-        saveImage(byteArrayOutputStream.toByteArray());
-    }
-
-    private void saveImage(byte[] imageData) {
+    private File createImageFile() {
+        // Create an image file in the external storage or app's specific directory
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(null); // Use the app's specific external directory
+        File imageFile = null;
         try {
-            File file = new File(getExternalFilesDir(null), "captured_image.jpg");
-
-            FileOutputStream fos = new FileOutputStream(file);
-            fos.write(imageData);
-            fos.close();
-
-            Toast.makeText(this, "Image saved successfully!", Toast.LENGTH_SHORT).show();
+            imageFile = File.createTempFile(
+                    imageFileName,  /* prefix */
+                    ".jpg",         /* suffix */
+                    storageDir      /* directory */
+            );
         } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Error saving image!", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error creating image file", e);
         }
+        return imageFile;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CAMERA_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                captureImage(null);
+            } else {
+                Toast.makeText(this, "Camera permission denied!", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void saveImageToGallery(Uri imageUri) {
+        try {
+            // Open the image from the URI using ContentResolver
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            if (inputStream != null) {
+                // Decode the InputStream into a Bitmap
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+
+                // Use ContentValues to specify the image details to be stored
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Images.Media.DISPLAY_NAME, "CapturedImage_" + System.currentTimeMillis());
+                values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/YourAppName");  // Set storage location
+
+                // Insert image into MediaStore
+                ContentResolver contentResolver = getContentResolver();
+                Uri savedImageUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+                // Save the image data to the gallery via OutputStream
+                if (savedImageUri != null) {
+                    OutputStream outputStream = contentResolver.openOutputStream(savedImageUri);
+                    if (outputStream != null) {
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);  // Compress and write to output stream
+                        outputStream.close();
+                        Toast.makeText(this, "Image saved to gallery!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                inputStream.close();
+            }
+
+        } catch (IOException e) {
+            Log.e(TAG, "Error saving image to gallery", e);
+            Toast.makeText(this, "Error saving image to gallery", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void publishMessage(String topic, String message)
+    {
+        mqttHandler.publish(topic, message);
+    }
+
+    private void subscribeToTopic(String topic)
+    {
+        mqttHandler.subscribe(topic);
     }
 
     @Override
     protected void onDestroy() {
+        mqttHandler.disconnect();
         super.onDestroy();
-        if (mqttClient != null) {
+        /*if (mqttClient != null) {
             try {
                 mqttClient.disconnect();
                 Log.d(TAG, "Disconnected from MQTT broker");
             } catch (MqttException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startCamera();
-            } else {
-                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
-            }
-        }
+        }*/
     }
 }
