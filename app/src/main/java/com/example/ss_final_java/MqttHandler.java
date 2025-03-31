@@ -16,6 +16,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.KeyPair;
@@ -76,55 +77,51 @@ public class MqttHandler {
     }
 
     // Create SSL Socket Factory
-    public static SSLSocketFactory getSocketFactory(InputStream caCrtFile,
-                                                    InputStream crtFile,
-                                                    InputStream keyFile,
+    public static SSLSocketFactory getSocketFactory(InputStream caCrtFile, InputStream crtFile, InputStream keyFile,
                                                     String password) throws Exception {
         Security.addProvider(new BouncyCastleProvider());
 
-        // Load CA certificate
+        // load CA certificate
+        X509Certificate caCert = null;
+
+        BufferedInputStream bis = new BufferedInputStream(caCrtFile);
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        java.security.cert.X509Certificate caCert = (java.security.cert.X509Certificate) cf.generateCertificate(caCrtFile);
 
-        // Load client certificate
-        java.security.cert.X509Certificate cert = (java.security.cert.X509Certificate) cf.generateCertificate(crtFile);
-
-        // Load private key
-        PEMParser pemParser = new PEMParser(new InputStreamReader(keyFile));
-        Object object = pemParser.readObject();
-
-        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
-        KeyPair keyPair;
-        if (object instanceof PEMKeyPair) {
-            keyPair = converter.getKeyPair((PEMKeyPair) object);
-        } else if (object instanceof PrivateKeyInfo) {
-            keyPair = new KeyPair(cert.getPublicKey(), converter.getPrivateKey((PrivateKeyInfo) object));
-        } else {
-            throw new Exception("Invalid key format");
+        while (bis.available() > 0) {
+            caCert = (X509Certificate) cf.generateCertificate(bis);
         }
 
-        // Load CA keystore
+        // load client certificate
+        bis = new BufferedInputStream(crtFile);
+        X509Certificate cert = null;
+        while (bis.available() > 0) {
+            cert = (X509Certificate) cf.generateCertificate(bis);
+        }
+
+        // load client private cert
+        PEMParser pemParser = new PEMParser(new InputStreamReader(keyFile));
+        Object object = pemParser.readObject();
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+        KeyPair key = converter.getKeyPair((PEMKeyPair) object);
+
         KeyStore caKs = KeyStore.getInstance(KeyStore.getDefaultType());
         caKs.load(null, null);
-        caKs.setCertificateEntry("ca-certificate", caCert);
-
+        caKs.setCertificateEntry("cert-certificate", caCert);
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(caKs);
 
-        // Load client keystore
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
         ks.setCertificateEntry("certificate", cert);
-        ks.setKeyEntry("private-key", keyPair.getPrivate(), password.toCharArray(), new java.security.cert.Certificate[]{cert});
-
+        ks.setKeyEntry("private-cert", key.getPrivate(), password.toCharArray(),
+                new java.security.cert.Certificate[]{cert});
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, password.toCharArray());
 
-        // Create SSL context
-        SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        SSLContext context = SSLContext.getInstance("TLSv1.2");
+        context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-        return sslContext.getSocketFactory();
+        return context.getSocketFactory();
     }
 
 
