@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private MqttHandler mqttHandler;
 
 
+
     // Camera launcher using Activity Result API
     private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -62,13 +63,44 @@ public class MainActivity extends AppCompatActivity {
                 if (result.getResultCode() == Activity.RESULT_OK) {
                     imageView.setImageURI(photoUri); // Display the captured image
                     saveImageToGallery(photoUri); // Save the image to the gallery
+                    sendImageOverMqtt(photoUri);
                 }
             }
     );
 
+    private void sendImageOverMqtt(Uri imageUri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            if (inputStream != null) {
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    byteArrayOutputStream.write(buffer, 0, bytesRead);
+                }
+
+                byte[] imageBytes = byteArrayOutputStream.toByteArray();
+                inputStream.close();
+
+                // Optionally, compress or encode to Base64 if needed
+                // String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+
+                mqttHandler.publishBinary(TOPIC, imageBytes);
+                Log.d(TAG, "Image sent via MQTT");
+                Toast.makeText(this, "Image sent via MQTT", Toast.LENGTH_SHORT).show();
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Error sending image via MQTT", e);
+            Toast.makeText(this, "Failed to send image", Toast.LENGTH_SHORT).show();
+        }
+
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        System.setProperty("javax.net.debug", "ssl,handshake");
         setContentView(R.layout.activity_main);
         Log.d(TAG, "START");
 
