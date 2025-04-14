@@ -1,0 +1,7 @@
+flask
+paho-mqtt
+pillow
+flask-socketio
+eventlet
+python-dotenv
+
