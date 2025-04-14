@@ -47,9 +47,6 @@ public class MqttHandler {
     private MqttClient client;
     private Context context;
 
-    String caFilePath = "C:\\Users\\Denisa\\Downloads\\ca.crt";  // Path to CA certificate
-    String clientCrtFilePath = "C:\\Users\\Denisa\\Downloads\\client.crt";  // Path to client certificate
-    String clientKeyFilePath = "C:\\Users\\Denisa\\Downloads\\client.key";  // Path to client key
     String mqttUserName = "";  // MQTT username (if needed)
     String mqttPassword = "123456";  // MQTT password (if needed)
 
@@ -80,12 +77,12 @@ public class MqttHandler {
 
 
             try {
-                //SSLSocketFactory socketFactory = getSocketFactory(context,"123456");
+                SSLSocketFactory socketFactory = getSocketFactory(context,"123456");
 
 
                 // HostnameVerifier for matching hostname or IP address with SAN (Subject Alternative Name)
 
-                SSLSocketFactory socketFactory = getSocketFactory();
+                //SSLSocketFactory socketFactory = getSocketFactory();
                 connectOptions.setSocketFactory(socketFactory);
 
                 //connectOptions.setSocketFactory(socketFactory);
@@ -118,7 +115,7 @@ public class MqttHandler {
 
     // Create SSL Socket Factory
 
-    public static SSLSocketFactory getSocketFactory() {
+    /*public static SSLSocketFactory getSocketFactory() {
         try {
             // Create a custom TrustManager that doesn't perform any certificate validation
             TrustManager[] trustAllCertificates = new TrustManager[]{
@@ -145,8 +142,8 @@ public class MqttHandler {
             e.printStackTrace();
             return null;
         }
-    }
-    /*private static SSLSocketFactory getSocketFactory(Context context_local, String password) throws Exception {
+    }*/
+    private static SSLSocketFactory getSocketFactory(Context context_local, String password) throws Exception {
         Log.d(TAG, "Initializing custom SSLSocketFactory...");
         Security.addProvider(new BouncyCastleProvider());
 
@@ -205,20 +202,26 @@ public class MqttHandler {
             // Set up CA TrustStore
             KeyStore caKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             caKeyStore.load(null, null);
-            caKeyStore.setCertificateEntry("ca", caCert);
+            caKeyStore.setCertificateEntry("ca-certificate", caCert);
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
             tmf.init(caKeyStore);
 
             // Set up client KeyStore
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(null, null);
-            ks.setCertificateEntry("certificate", caCert);
+            ks.setCertificateEntry("certificate", clientCert);
             Log.d(TAG, privateKey.toString());
-            ks.setKeyEntry("private-key", privateKey, password.toCharArray(),
-                    new java.security.cert.Certificate[]{clientCert});
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
-                    .getDefaultAlgorithm());
-            kmf.init(ks, password.toCharArray());
+            ks.setKeyEntry("private-key",privateKey, "".toCharArray(),new java.security.cert.Certificate[] {clientCert});
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ks, "".toCharArray());
+            //TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            //tmf.init(ks);
+
+            //ks.setKeyEntry("private-key", privateKey, password.toCharArray(),
+              //      new java.security.cert.Certificate[]{clientCert});
+            //KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
+              //      .getDefaultAlgorithm());
+            //kmf.init(ks, password.toCharArray());
 
             // finally, create SSL socket factory
             SSLContext context = SSLContext.getInstance("TLSv1.2");
@@ -230,7 +233,7 @@ public class MqttHandler {
             Log.e(TAG, "Failed to create SSLSocketFactory", e);
             throw e;
         }
-    }*/
+    }
 
 
     public void publishBinary(String topic, byte[] payload) {

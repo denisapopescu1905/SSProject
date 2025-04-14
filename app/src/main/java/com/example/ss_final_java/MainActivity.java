@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private Uri photoUri;
     private ImageView imageView;
 
-    private static final String BROKER = "ssl://192.168.1.104:8883";
+    private static final String BROKER = "ssl://10.41.202.136:8883";
     private static final String CLIENT_ID = "demo_client";
     private static final String TOPIC = "test/topic";
     private static final int SUB_QOS = 1;
