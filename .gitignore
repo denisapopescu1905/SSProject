@@ -1,3 +1,4 @@
+# Android/Java specific
 *.iml
 .gradle
 /local.properties
@@ -37,3 +38,27 @@ Thumbs.db
 
 # Build and output directories
 /app/build/
+
+# --- Python/Flask additions below ---
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Certificates and keys
+**/certs/
+**/*.crt
+**/*.key
+**/*.pem
+**/*.p12
+**/*.der
+
+# Env files
+.env
+.env.*
+
+# Temp or backup files
+*.tmp
+*.bak
+
