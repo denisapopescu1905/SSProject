@@ -30,6 +30,7 @@ import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 
 import javax.net.ssl.HostnameVerifier;
@@ -42,16 +43,12 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import java.security.cert.X509Certificate;
+import java.util.Enumeration;
 
 public class MqttHandler {
     private MqttClient client;
     private Context context;
 
-    String caFilePath = "C:\\Users\\Denisa\\Downloads\\ca.crt";  // Path to CA certificate
-    String clientCrtFilePath = "C:\\Users\\Denisa\\Downloads\\client.crt";  // Path to client certificate
-    String clientKeyFilePath = "C:\\Users\\Denisa\\Downloads\\client.key";  // Path to client key
-    String mqttUserName = "";  // MQTT username (if needed)
-    String mqttPassword = "123456";  // MQTT password (if needed)
 
 
     // Constructor that takes Context
@@ -80,12 +77,12 @@ public class MqttHandler {
 
 
             try {
-                //SSLSocketFactory socketFactory = getSocketFactory(context,"123456");
+                SSLSocketFactory socketFactory = getSocketFactory(context,"123456");
 
 
                 // HostnameVerifier for matching hostname or IP address with SAN (Subject Alternative Name)
 
-                SSLSocketFactory socketFactory = getSocketFactory();
+                //SSLSocketFactory socketFactory = getSocketFactory();
                 connectOptions.setSocketFactory(socketFactory);
 
                 //connectOptions.setSocketFactory(socketFactory);
@@ -118,7 +115,7 @@ public class MqttHandler {
 
     // Create SSL Socket Factory
 
-    public static SSLSocketFactory getSocketFactory() {
+    /*public static SSLSocketFactory getSocketFactory() {
         try {
             // Create a custom TrustManager that doesn't perform any certificate validation
             TrustManager[] trustAllCertificates = new TrustManager[]{
@@ -145,92 +142,70 @@ public class MqttHandler {
             e.printStackTrace();
             return null;
         }
-    }
-    /*private static SSLSocketFactory getSocketFactory(Context context_local, String password) throws Exception {
+    }*/
+
+    private static SSLSocketFactory getSocketFactory(Context context, String password) throws Exception {
         Log.d(TAG, "Initializing custom SSLSocketFactory...");
+
         Security.addProvider(new BouncyCastleProvider());
 
-        try {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-            // Load CA certificate
-            Log.d(TAG, "Loading CA certificate");
-            X509Certificate caCert;
-            try (InputStream caInput = context_local.getResources().openRawResource(R.raw.ca)) {
-                caCert = (X509Certificate) cf.generateCertificate(caInput);
-            }
-
-            Log.d(TAG, caCert.toString());
-
-            // Load client certificate
-            Log.d(TAG, "Loading client certificate");
-            X509Certificate clientCert;
-            try (InputStream certInput = context_local.getResources().openRawResource(R.raw.client)) {
-                clientCert = (X509Certificate) cf.generateCertificate(certInput);
-            }
-
-            // Load client private key
-            Log.d(TAG, "Loading client private key");
-            InputStream keyInput = context_local.getResources().openRawResource(R.raw.client_key);
-            PEMParser pemParser = new PEMParser(new InputStreamReader(keyInput));
-
-            Object object = pemParser.readObject();
-            pemParser.close();
-
-            PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder()
-                    .build(password.toCharArray());
-            Security.addProvider(new BouncyCastleProvider());
-            JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
-
-            PrivateKey privateKey = null;
-            KeyPair keyPair = null;;
-
-            if (object instanceof PEMEncryptedKeyPair) {
-                Log.d(TAG, "Encrypted key detected");
-                keyPair = converter.getKeyPair(((PEMEncryptedKeyPair) object).decryptKeyPair(decProv));
-                privateKey = keyPair.getPrivate();
-            } else if (object instanceof PEMKeyPair) {
-                Log.d(TAG, "Unencrypted key detected");
-                keyPair = converter.getKeyPair((PEMKeyPair) object);
-                privateKey = keyPair.getPrivate();
-            } else if (object instanceof org.bouncycastle.asn1.pkcs.PrivateKeyInfo) {
-                Log.d(TAG, "PrivateKeyInfo detected");
-                org.bouncycastle.asn1.pkcs.PrivateKeyInfo privateKeyInfo =
-                        (org.bouncycastle.asn1.pkcs.PrivateKeyInfo) object;
-                privateKey = converter.getPrivateKey(privateKeyInfo);
-            } else {
-                throw new IllegalArgumentException("Unsupported key format: " + object.getClass());
-            }
-
-            // Set up CA TrustStore
-            KeyStore caKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            caKeyStore.load(null, null);
-            caKeyStore.setCertificateEntry("ca", caCert);
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
-            tmf.init(caKeyStore);
-
-            // Set up client KeyStore
-            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(null, null);
-            ks.setCertificateEntry("certificate", caCert);
-            Log.d(TAG, privateKey.toString());
-            ks.setKeyEntry("private-key", privateKey, password.toCharArray(),
-                    new java.security.cert.Certificate[]{clientCert});
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
-                    .getDefaultAlgorithm());
-            kmf.init(ks, password.toCharArray());
-
-            // finally, create SSL socket factory
-            SSLContext context = SSLContext.getInstance("TLSv1.2");
-            context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-            return context.getSocketFactory();
-
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to create SSLSocketFactory", e);
-            throw e;
+        // Load CA certificate
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate caCert;
+        try (InputStream caInput = context.getResources().openRawResource(R.raw.ca)) {
+            caCert = (X509Certificate) cf.generateCertificate(caInput);
         }
-    }*/
+
+        Log.d(TAG, caCert.toString());
+
+        // Load client certificate
+        X509Certificate clientCert;
+        try (InputStream certInput = context.getResources().openRawResource(R.raw.client)) {
+            clientCert = (X509Certificate) cf.generateCertificate(certInput);
+        }
+
+        // Load client private key
+        InputStream keyInput = context.getResources().openRawResource(R.raw.client_key);
+        PEMParser pemParser = new PEMParser(new InputStreamReader(keyInput));
+        Object object = pemParser.readObject();
+        pemParser.close();
+
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+        PrivateKey privateKey;
+        if (object instanceof PEMEncryptedKeyPair) {
+            PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder().build(password.toCharArray());
+            KeyPair keyPair = converter.getKeyPair(((PEMEncryptedKeyPair) object).decryptKeyPair(decProv));
+            privateKey = keyPair.getPrivate();
+        } else if (object instanceof PEMKeyPair) {
+            privateKey = converter.getKeyPair((PEMKeyPair) object).getPrivate();
+        } else if (object instanceof org.bouncycastle.asn1.pkcs.PrivateKeyInfo) {
+            privateKey = converter.getPrivateKey((org.bouncycastle.asn1.pkcs.PrivateKeyInfo) object);
+        } else {
+            throw new IllegalArgumentException("Unsupported key format: " + object.getClass());
+        }
+
+        // Create and initialize KeyStore with client cert and private key
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(null, null);
+        keyStore.setKeyEntry("client", privateKey, "".toCharArray(), new Certificate[]{clientCert});
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keyStore, "".toCharArray());
+
+        // Create and initialize TrustStore with CA cert
+        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        trustStore.load(null, null);
+        trustStore.setCertificateEntry("ca", caCert);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(trustStore);
+
+        // Initialize SSLContext with both managers
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+        return sslContext.getSocketFactory();
+    }
+
+
 
 
     public void publishBinary(String topic, byte[] payload) {

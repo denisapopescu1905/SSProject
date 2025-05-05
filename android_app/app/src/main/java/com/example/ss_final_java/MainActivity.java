@@ -45,8 +45,8 @@ public class MainActivity extends AppCompatActivity {
     private Uri photoUri;
     private ImageView imageView;
 
-    private static final String BROKER = "ssl://192.168.1.104:8883";
-    private static final String CLIENT_ID = "demo_client";
+    private static final String BROKER = "ssl://192.168.1.110:8883";
+    private static final String CLIENT_ID = "Android_client";
     private static final String TOPIC = "test/topic";
     private static final int SUB_QOS = 1;
     private static final int PUB_QOS = 1;
@@ -100,9 +100,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        System.setProperty("javax.net.debug", "ssl,handshake");
+        System.setProperty("javax.net.debug", "ssl,handshake,verbose");
+
         setContentView(R.layout.activity_main);
         Log.d(TAG, "START");
+        //System.setProperty("javax.net.debug", "ssl,handshake,ext");
+
 
         imageView = findViewById(R.id.image_view);
         Button captureButton = findViewById(R.id.button_capture);

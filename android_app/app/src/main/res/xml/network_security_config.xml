@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">192.168.1.110</domain> <!-- Replace with your server's domain or IP -->
+        <trust-anchors>
+            <certificates src="@raw/ca"/> <!-- Replace with your actual certificate name without .crt -->
+            <certificates src="@raw/broker"/>
+            <certificates src="@raw/client"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </domain-config>
+</network-security-config>
