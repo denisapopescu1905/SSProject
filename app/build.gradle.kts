@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("org.cyclonedx.bom") version "1.7.4"
 }
 
 android {
@@ -29,6 +30,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+}
+
+cyclonedxBom {
+    // Output formats: XML, JSON
+    includeConfigs = ["runtimeClasspath", "compileClasspath"]
+    skipConfigs = ["lintClasspath", "testCompileClasspath", "testRuntimeClasspath"]
+    includeBomSerialNumber = true
+    includeHashes = true
+    componentVersion = "1.0"  // Your app version
+    outputName = "app-sbom"
+    outputFormat = "all"  // Generates both JSON and XML
+    skipProvidedScope = false
+    skipRuntimeScope = false
 }
 
 dependencies {
