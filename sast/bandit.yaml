@@ -1,0 +1,84 @@
+exclude_dirs:
+  - 'tests'
+  - 'venv'
+  - '.venv'
+  - 'env'
+  - '.env'
+  - '.git'
+  - 'docs'
+  - 'examples'
+  - 'build'
+  - 'dist'
+  - '.tox'
+  - '.eggs'
+  - '*.egg-info'
+
+# Specific files to exclude
+exclude_paths:
+  - '*/setup.py'
+  - '*/conftest.py'
+  - '*/test_*.py'
+
+# Specific test IDs to run (if empty, all tests will run except skipped ones)
+# This is useful if you want to focus on specific issues
+tests:
+  # High severity tests
+  - 'B201'  # Flask app run with debug=True
+  - 'B301'  # Pickle usage
+  - 'B403'  # Import of pickle module
+  - 'B102'  # Use of exec
+  - 'B307'  # Use of eval
+  - 'B501'  # Request with no cert validation
+  - 'B506'  # Use of YAML unsafe load
+  
+  # Medium severity tests
+  - 'B303'  # Use of insecure MD4/MD5/SHA1 hash functions
+  - 'B324'  # Use of os.popen
+  - 'B608'  # Hardcoded SQL queries
+  - 'B602'  # subprocess with shell=True
+
+# Tests to skip
+skips:
+  # Low-risk or false-positive prone tests
+  - 'B101'  # Use of assert
+  - 'B104'  # Hardcoded bind all interfaces
+  - 'B110'  # Try-except-pass pattern
+  - 'B311'  # Random is not secure
+  - 'B703'  # Potential XSS via django-jinja
+
+# Severity level filter (Only report issues of specified severity level or higher)
+# Options: LOW, MEDIUM, HIGH
+severity: LOW
+
+# Confidence level filter (Only report issues of specified confidence level or higher)
+# Options: LOW, MEDIUM, HIGH
+confidence: MEDIUM
+
+# Report format options
+# Options: txt, json, yaml, csv, html, xml, custom
+output_format: html
+
+# Output file path (leave empty for stdout)
+output_file: 'bandit-report.html'
+
+# Show code snippets in report
+show_code: true
+
+# Number of lines of context to show around vulnerable lines
+context_lines: 5
+
+# Show progress during scan
+verbose: true
+
+# Aggregate multiple similar issues
+aggregate: true
+
+# Run recursive mode
+recursive: true
+
+# Ignore nosec comments
+ignore_nosec: false
+
+# Enable profile
+# profile includes/excludes different sets of tests
+profile: None
