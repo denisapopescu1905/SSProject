@@ -3,7 +3,7 @@ import com.android.build.api.dsl.JacocoOptions
 plugins {
     id("com.android.application")
     id("jacoco")
-    id("org.sonarqube") version "6.2.0.5505"
+    id("org.sonarqube") version "4.4.1.3373"
 }
 
 android {
