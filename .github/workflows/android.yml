@@ -58,7 +58,7 @@ jobs:
 
       - name: Run SonarQube analysis
         working-directory: ./android_app
-        run: ./gradlew sonarqube
+        run: ./gradlew sonar
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
