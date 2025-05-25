@@ -1,39 +1,36 @@
-# Imagine de bază cu JDK 17
+# Imagine de bază cu JDK + SDK Android
 FROM openjdk:17-slim
 
-# Instalează utilitare necesare
-RUN apt-get update && apt-get install -y wget unzip
+# Variabile de mediu
+ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator
 
-# Setează calea SDK-ului Android
-ENV ANDROID_SDK_ROOT /sdk
+# Instalează dependințe
+RUN apt-get update && apt-get install -y \
+    wget unzip git curl lib32stdc++6 lib32z1 libc6-i386 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Creează folder SDK
-RUN mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+# Instalează Android SDK Command Line Tools
+RUN mkdir -p $ANDROID_HOME/cmdline-tools && \
+    cd $ANDROID_HOME/cmdline-tools && \
+    wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip && \
+    unzip tools.zip && \
+    mv cmdline-tools latest && \
+    rm tools.zip
 
-# Descarcă Android command line tools
-RUN wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdline-tools.zip && \
-    unzip /tmp/cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools && \
-    rm /tmp/cmdline-tools.zip
+# Acceptă licențele + instalează platforma necesară
+RUN yes | sdkmanager --licenses && \
+    yes | sdkmanager "platforms;android-33" "build-tools;33.0.0" "platform-tools"
 
-# Mută folderul commandlinetools în locația corectă (cerută de SDK)
-RUN mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest && \
-    mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
-
-# Adaugă SDK tools în PATH
-ENV PATH $PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
-
-# Acceptă licențele automat
-RUN yes | sdkmanager --licenses
-
-# Instalează platform-tools și SDK Build tools pentru Android 33 (poți schimba versiunea aici)
-RUN sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
-
-# Setează directorul de lucru în container
+# Copiază fișierele proiectului
 WORKDIR /app
-
-# Copiază codul sursă în container
 COPY . .
 
-# Rulează build-ul cu Gradle Wrapper
+# Adaugă local.properties
+RUN echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+# Dă permisiune la gradlew
 RUN chmod +x ./gradlew
+
+# Rulează build-ul
 RUN ./gradlew assembleDebug
