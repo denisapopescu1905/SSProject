@@ -229,7 +229,7 @@ public class MqttHandler {
         }
     }
 
-    void deleteStoredImages() {
+    public void deleteStoredImages() {
         File dir = new File(context.getFilesDir(), "offline_images");
         if (!dir.exists()) return;
 
