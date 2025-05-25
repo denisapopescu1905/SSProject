@@ -40,6 +40,12 @@ jobs:
           push: true
           tags: denisapopescu1905/android-app:latest
 
+      - name: List files in root
+  	run: ls -la
+
+      - name: List files in android_app
+  	run: ls -la ./android_app
+
       - name: Run SonarQube analysis
         working-directory: ./android_app
         run: ./gradlew sonarqube
