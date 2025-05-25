@@ -3,6 +3,7 @@ import com.android.build.api.dsl.JacocoOptions
 plugins {
     id("com.android.application")
     id("jacoco")
+    id("org.sonarqube") version "6.2.0.5505"
 }
 
 android {
@@ -46,6 +47,14 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+    }
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "denisapopescu1905_SSProject")
+        property("sonar.organization", "denisapopescu1905")
+        property("sonar.host.url", "https://sonarcloud.io")
     }
 }
 
