@@ -22,7 +22,7 @@ public class NetworkMonitor {
 
     public static final String NETWORK_TAG = "NetworkTag";
 
-    public NetworkMonitor(Context context, MqttHandler mqttHandler) {
+    public NetworkMonitor(@NonNull Context context, MqttHandler mqttHandler) {
         this.mqttHandler = mqttHandler;
         connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         registerNetworkCallback();

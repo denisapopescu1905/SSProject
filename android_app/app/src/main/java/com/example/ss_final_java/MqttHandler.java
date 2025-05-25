@@ -52,13 +52,13 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 public class MqttHandler {
-    private MqttClient client;
+    MqttClient client;
     private Context context;
     private static final int MAX_STORED_IMAGES = 50;  ///< Storage Limit
 
     public static final String MQTT_TAG = "MQTT";
 
-    private IMqttMessageListener messageListener;
+    IMqttMessageListener messageListener;
 
     public MqttHandler(Context context) {
         this.context = context;
@@ -104,7 +104,7 @@ public class MqttHandler {
     }
 
     ///< Create SSL Socket Factory
-    private static SSLSocketFactory getSocketFactory(Context context, String password) throws Exception {
+    static SSLSocketFactory getSocketFactory(Context context, String password) throws Exception {
         Log.d(MQTT_TAG, "Initializing custom SSLSocketFactory...");
 
         Security.addProvider(new BouncyCastleProvider());
@@ -183,7 +183,7 @@ public class MqttHandler {
         saveImageLocally(payload);
     }
 
-    private void saveImageLocally(byte[] data) {
+    void saveImageLocally(byte[] data) {
         try {
             File dir = new File(context.getFilesDir(), "offline_images");
             if (!dir.exists()) dir.mkdirs();

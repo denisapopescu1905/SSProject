@@ -47,8 +47,8 @@ import android.graphics.BitmapFactory;
 public class MainActivity extends AppCompatActivity {
 
     public static final String APP_TAG = "CameraApp";
-    private static final int REQUEST_CAMERA_PERMISSION_CODE = 1;
-    private Uri photoUri;
+    public static final int REQUEST_CAMERA_PERMISSION_CODE = 1;
+    Uri photoUri;
     private ImageView imageView;
 
     private Timer periodicTimer;
@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
     static final String TOPIC = "test/topic";
     static final String RECV_TOPIC = "camera/commands";
 
-    private MqttHandler mqttHandler;
+    MqttHandler mqttHandler;
 
     private void startPeriodicMode() {
         if (periodicTimer != null) {
@@ -127,27 +127,29 @@ public class MainActivity extends AppCompatActivity {
             }
     );
 
-    private void sendImageOverMqtt(Uri imageUri) {
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(imageUri);
-            if (inputStream != null) {
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    byteArrayOutputStream.write(buffer, 0, bytesRead);
+    void sendImageOverMqtt(Uri imageUri) {
+        if(imageUri != null) {
+            try {
+                InputStream inputStream = getContentResolver().openInputStream(imageUri);
+                if (inputStream != null) {
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        byteArrayOutputStream.write(buffer, 0, bytesRead);
+                    }
+
+                    byte[] imageBytes = byteArrayOutputStream.toByteArray();
+                    inputStream.close();
+
+                    ///< Optionally, compress or encode to Base64 if needed
+                    ///< String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+                    mqttHandler.publishBinary(TOPIC, imageBytes);
                 }
-
-                byte[] imageBytes = byteArrayOutputStream.toByteArray();
-                inputStream.close();
-
-                ///< Optionally, compress or encode to Base64 if needed
-                ///< String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
-                mqttHandler.publishBinary(TOPIC, imageBytes);
+            } catch (IOException e) {
+                Log.e(APP_TAG, "Error sending image via MQTT", e);
+                Toast.makeText(this, "Failed to send image", Toast.LENGTH_SHORT).show();
             }
-        } catch (IOException e) {
-            Log.e(APP_TAG, "Error sending image via MQTT", e);
-            Toast.makeText(this, "Failed to send image", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -212,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
         NetworkMonitor networkMonitor = new NetworkMonitor(this, mqttHandler);
     }
 
-    private void captureImage(View view) {
+    void captureImage(View view) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -235,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
-    private File createImageFile() {
+    File createImageFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = getExternalFilesDir(null); // Use the app's specific external directory
