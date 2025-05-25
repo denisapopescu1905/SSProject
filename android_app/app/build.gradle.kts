@@ -50,11 +50,12 @@ android {
     }
 }
 
-sonar {
+sonarqube {
     properties {
         property("sonar.projectKey", "denisapopescu1905_SSProject")
         property("sonar.organization", "denisapopescu1905")
         property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.login", System.getenv("SONAR_TOKEN"))
     }
 }
 
