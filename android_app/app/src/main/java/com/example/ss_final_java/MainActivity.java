@@ -214,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
         NetworkMonitor networkMonitor = new NetworkMonitor(this, mqttHandler);
     }
 
-    void captureImage(View view) {
+    public void captureImage(View view) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
