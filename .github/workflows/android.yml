@@ -46,6 +46,10 @@ jobs:
       - name: List files in android_app
         run: ls -la ./android_app
 
+      - name: Make gradlew executable
+        working-directory: ./android_app
+        run: chmod +x ./gradlew
+
       - name: Run SonarQube analysis
         working-directory: ./android_app
         run: ./gradlew sonarqube
