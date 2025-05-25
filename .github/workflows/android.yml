@@ -25,6 +25,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Recreate certs/ from GitHub secrets
+        run: |
+          mkdir -p mqtt-pipeline/mqtt/certs
+          echo "${{ secrets.CA_CRT }}" > mqtt-pipeline/mqtt/certs/ca.crt
+          echo "${{ secrets.BROKER_CRT }}" > mqtt-pipeline/mqtt/certs/broker.crt
+          echo "${{ secrets.CLIENT_CRT }}" > mqtt-pipeline/mqtt/certs/client.crt
+          echo "${{ secrets.CLIENT_KEY }}" > mqtt-pipeline/mqtt/certs/client_key.key
+
       - name: Build and Push Android App
         uses: docker/build-push-action@v5
         with:
