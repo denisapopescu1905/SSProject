@@ -48,11 +48,11 @@ jobs:
           -Dsonar.login=$SONAR_TOKEN
         working-directory: ./android_app
 
-      - name: Upload Jacoco test coverage report
-        uses: actions/upload-artifact@v2
-        with:
-          name: jacoco-report
-          path: android_app/app/build/reports/jacoco/jacocoTestReport/html
+      #- name: Upload Jacoco test coverage report
+      #  uses: actions/upload-artifact@v2
+      #  with:
+      #    name: jacoco-report
+      #    path: android_app/app/build/reports/jacoco/jacocoTestReport/html
 
       # (Opțional) Instrumentation tests - emulator runner
       # - name: Run instrumentation tests
