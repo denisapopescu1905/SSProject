@@ -44,4 +44,4 @@ jobs:
         working-directory: android_app
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew clean build sonar --info
+        run: ./gradlew clean build sonarqube -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN -Djavax.net.ssl.trustStoreType=JKS -Djavax.net.ssl.trustStore=/usr/lib/jvm/zulu-17-amd64/lib/security/cacerts --info
