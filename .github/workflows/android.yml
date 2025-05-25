@@ -48,11 +48,11 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest jacocoTestReport
 
-      - name: Upload Jacoco test coverage report
-        uses: actions/upload-artifact@v3
-        with:
-          name: jacoco-report
-          path: app/build/reports/jacoco/jacocoTestReport/html
+      #- name: Upload Jacoco test coverage report
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: jacoco-report
+      #    path: app/build/reports/jacoco/jacocoTestReport/html
 
       - name: Run SonarCloud analysis
         env:
