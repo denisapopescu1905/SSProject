@@ -3,7 +3,7 @@ import com.android.build.api.dsl.JacocoOptions
 plugins {
     id("com.android.application")
     id("jacoco")
-    id("org.sonarqube") version "4.4.1.3373"
+    id("org.sonarqube") version "6.2.0.5505"
 }
 
 android {
@@ -50,12 +50,11 @@ android {
     }
 }
 
-sonarqube {
+sonar {
     properties {
         property("sonar.projectKey", "denisapopescu1905_SSProject")
         property("sonar.organization", "denisapopescu1905")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.login", System.getenv("SONAR_TOKEN"))
     }
 }
 
