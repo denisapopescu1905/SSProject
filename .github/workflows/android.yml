@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  ANDROID_SDK_ROOT: ${{ runner.tool_cache }}/android-sdk
+  ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
 
 jobs:
   android-tests:
