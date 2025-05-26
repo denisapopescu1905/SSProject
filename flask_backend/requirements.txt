@@ -5,3 +5,4 @@ pytesseract
 flask-socketio
 eventlet
 python-dotenv
+setuptools>=78.1.1
