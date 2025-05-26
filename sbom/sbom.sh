@@ -11,7 +11,7 @@ cd ..
 
 # Generate Android dependency report
 echo "Generating Android dependency report..."
-cd app || exit
+cd android_app || exit
 
 # Check if gradlew exists
 if [ -f "./gradlew" ]; then
