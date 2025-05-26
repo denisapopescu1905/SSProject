@@ -1,27 +1,33 @@
 name: Security Audit
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # allows manual runs
 
 jobs:
-  security:
+  security-scan:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Set up Python
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set Up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
-      - name: Install dependencies
+      - name: 📦 Install Dependencies
         run: |
-          python -m venv venv
-          source venv/bin/activate
+          python -m pip install --upgrade pip
           pip install -r flask_backend/requirements.txt
           pip install bandit pip-audit
 
-      - name: Run Bandit
-        run: bandit -r flask_backend/
+      - name: 🔍 Run Bandit (Static Code Scan)
+        run: bandit -r flask_backend/ -ll
 
-      - name: Run pip-audit
+      - name: 🛡️ Run pip-audit (Vulnerability Scan)
         run: pip-audit
