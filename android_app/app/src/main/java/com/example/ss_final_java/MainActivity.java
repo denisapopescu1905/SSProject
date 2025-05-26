@@ -82,7 +82,11 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(() -> {
                     Logger.d(APP_TAG, "Periodic 30s");
                     mqttHandler.resendStoredImages(TOPIC);
-                }).start();;
+                });//.start();
+                /*runOnUiThread(() -> {
+                    Logger.d(APP_TAG, "Periodic 30s");
+                    mqttHandler.resendStoredImages(TOPIC);
+                });*/
             }
         }, 0, 30000);  // la fiecare 30 secunde
     }
@@ -98,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(() -> {
                     Logger.d(APP_TAG, "Live 1s");
                     mqttHandler.resendStoredImages(TOPIC);
-                }).start();;
+                });//.start();;
             }
         }, 0, 1000);  // la fiecare 30 secunde
     }
