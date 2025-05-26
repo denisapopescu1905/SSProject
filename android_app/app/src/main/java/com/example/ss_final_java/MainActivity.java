@@ -51,8 +51,10 @@ public class MainActivity extends AppCompatActivity {
     Uri photoUri;
     private ImageView imageView;
 
-    private Timer periodicTimer;
-    private Timer liveTimer;
+    Timer periodicTimer;
+    Timer liveTimer;
+
+    public ToastWrapper mainToastWrapper;
 
 
     protected enum Mode { NONE, ON_DEMAND, PERIODIC, LIVE }
@@ -68,23 +70,24 @@ public class MainActivity extends AppCompatActivity {
 
     MqttHandler mqttHandler;
 
-    private void startPeriodicMode() {
+    void startPeriodicMode() {
         if (periodicTimer != null) {
             periodicTimer.cancel();
         }
         periodicTimer = new Timer();
+        Logger.d(APP_TAG, "Periodic 30s!!!!!!!!!!");
         periodicTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 new Thread(() -> {
-                    Log.d(APP_TAG, "Periodic 30s");
+                    Logger.d(APP_TAG, "Periodic 30s");
                     mqttHandler.resendStoredImages(TOPIC);
-                });
+                }).start();;
             }
         }, 0, 30000);  // la fiecare 30 secunde
     }
 
-    private void startLiveMode() {
+    void startLiveMode() {
         if (liveTimer != null) {
             liveTimer.cancel();
         }
@@ -93,21 +96,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 new Thread(() -> {
-                    Log.d(APP_TAG, "Live 1s");
+                    Logger.d(APP_TAG, "Live 1s");
                     mqttHandler.resendStoredImages(TOPIC);
-                });
+                }).start();;
             }
         }, 0, 1000);  // la fiecare 30 secunde
     }
 
-    private void stopPeriodicMode() {
+    void stopPeriodicMode() {
         if (periodicTimer != null) {
             periodicTimer.cancel();
             periodicTimer = null;
         }
     }
 
-    private void stopLiveMode() {
+    void stopLiveMode() {
         if (liveTimer != null) {
             liveTimer.cancel();
             liveTimer = null;
@@ -148,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             } catch (IOException e) {
                 Log.e(APP_TAG, "Error sending image via MQTT", e);
-                Toast.makeText(this, "Failed to send image", Toast.LENGTH_SHORT).show();
+                mainToastWrapper.show("Failed to send image");
             }
         }
     }
@@ -157,9 +160,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         System.setProperty("javax.net.debug", "ssl,handshake,verbose");
+        mainToastWrapper = new ToastWrapper(this);
 
         setContentView(R.layout.activity_main);
-        Log.d(APP_TAG, "START");
+        Logger.d(APP_TAG, "START");
 
         imageView = findViewById(R.id.image_view);
         Button captureButton = findViewById(R.id.button_capture);
@@ -203,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
                         //stopPeriodicMode();
                         break;
                 }
-                Toast.makeText(MainActivity.this, "Mode: " + currentMode.name(), Toast.LENGTH_SHORT).show();
+                mainToastWrapper.show( "Mode: " + currentMode.name());
             }
 
             @Override
@@ -261,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 captureImage(null);
             } else {
-                Toast.makeText(this, "Camera permission denied!", Toast.LENGTH_SHORT).show();
+                mainToastWrapper.show("Camera permission denied!");
             }
         }
     }
@@ -284,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
                     if (outputStream != null) {
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);  // Compress and write to output stream
                         outputStream.close();
-                        Toast.makeText(this, "Image saved to gallery!", Toast.LENGTH_SHORT).show();
+                        mainToastWrapper.show("Image saved to gallery!");
                     }
                 }
                 inputStream.close();
@@ -292,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
 
         } catch (IOException e) {
             Log.e(APP_TAG, "Error saving image to gallery", e);
-            Toast.makeText(this, "Error saving image to gallery", Toast.LENGTH_SHORT).show();
+            mainToastWrapper.show("Error saving image to gallery");
         }
     }
     @Override

@@ -2,9 +2,8 @@ import com.android.build.api.dsl.JacocoOptions
 
 plugins {
     id("com.android.application")
-    kotlin("android")
     id("jacoco")
-    id("org.sonarqube")
+    id("org.sonarqube") version "6.2.0.5505"
 }
 
 android {
@@ -67,7 +66,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         "**/R$*.class",
         "**/BuildConfig.*",
         "**/Manifest*.*",
-        "**/*Test*.*",
+        "**/R*Test*.*",  // Exclude tests starting with R
         "android/**/*.*"
     )
 
@@ -117,7 +116,6 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.11.0")
-    testImplementation("org.robolectric:robolectric:4.10.3")
     testImplementation("androidx.test:core:1.5.0")
     //testImplementation ("org.conscrypt:conscrypt-android:2.5.2")  // versiune recomandată (poți verifica ultima pe Maven Central)
 

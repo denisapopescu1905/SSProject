@@ -54,24 +54,31 @@ import java.util.Enumeration;
 public class MqttHandler {
     MqttClient client;
     private Context context;
-    private static final int MAX_STORED_IMAGES = 50;  ///< Storage Limit
+    public static final int MAX_STORED_IMAGES = 50;  ///< Storage Limit
 
     public static final String MQTT_TAG = "MQTT";
 
     IMqttMessageListener messageListener;
 
+    public ToastWrapper toastWrapper;
+
     public MqttHandler(Context context) {
         this.context = context;
+        this.toastWrapper = toastWrapper != null ? toastWrapper : new ToastWrapper(context);
+    }
+    public MqttHandler(Context context, ToastWrapper toastWrapper) {
+        this.context = context;
+        this.toastWrapper = toastWrapper;
     }
 
     public void connect(String brokerUrl, String clientId) {
         try {
-            Log.d(MQTT_TAG, "Initializing MQTT client...");
+            Logger.d(MQTT_TAG, "Initializing MQTT client...");
 
             ///< Set up MQTT client
             MemoryPersistence persistence = new MemoryPersistence();
             client = new MqttClient(brokerUrl, clientId, persistence);
-            Log.d(MQTT_TAG, "Client initialized. Connecting to broker: " + brokerUrl);
+            Logger.d(MQTT_TAG, "Client initialized. Connecting to broker: " + brokerUrl);
 
             ///< Set up connection options
             MqttConnectOptions connectOptions = new MqttConnectOptions();
@@ -89,23 +96,23 @@ public class MqttHandler {
                 e.printStackTrace();
             }
 
-            Log.d(MQTT_TAG, "Connection options set.");
+            Logger.d(MQTT_TAG, "Connection options set.");
             client.connect(connectOptions);
-            Log.d(MQTT_TAG, "Connected to broker: " + brokerUrl);
+            Logger.d(MQTT_TAG, "Connected to broker: " + brokerUrl);
             //resendStoredImages();
             subscribe(RECV_TOPIC);
 
         } catch (MqttException e) {
-            Log.e(MQTT_TAG, "Error connecting to broker: " + e.getMessage());
-            Log.e(MQTT_TAG, "Reason: " + e.getReasonCode(), e);
-            Log.e(MQTT_TAG, "Cause: " + e.getCause(), e);
+            Logger.e(MQTT_TAG, "Error connecting to broker: " + e.getMessage());
+            Logger.e(MQTT_TAG, "Reason: " + e.getReasonCode());
+            Logger.e(MQTT_TAG, "Cause: " + e.getCause());
         }
 
     }
 
     ///< Create SSL Socket Factory
     static SSLSocketFactory getSocketFactory(Context context, String password) throws Exception {
-        Log.d(MQTT_TAG, "Initializing custom SSLSocketFactory...");
+        Logger.d(MQTT_TAG, "Initializing custom SSLSocketFactory...");
 
         Security.addProvider(new BouncyCastleProvider());
 
@@ -116,7 +123,7 @@ public class MqttHandler {
             caCert = (X509Certificate) cf.generateCertificate(caInput);
         }
 
-        Log.d(MQTT_TAG, caCert.toString());
+        Logger.d(MQTT_TAG, caCert.toString());
 
         ///< Load client certificate
         X509Certificate clientCert;
@@ -171,14 +178,14 @@ public class MqttHandler {
                 MqttMessage message = new MqttMessage(payload);
                 message.setQos(1);
                 client.publish(topic, message);
-                Log.d(MQTT_TAG, "Binary message published to topic: " + topic);
-                Toast.makeText(context, "Image successfully sent via MQTT", Toast.LENGTH_SHORT).show();
+                Logger.d(MQTT_TAG, "Binary message published to topic: " + topic);
+                toastWrapper.show( "Image successfully sent via MQTT");
             } else {
-                Toast.makeText(context, "Connection unavailable. Image stored locally.", Toast.LENGTH_SHORT).show();
+                toastWrapper.show("Connection unavailable. Image stored locally.");
             }
         } catch (MqttException e) {
-            Log.e(MQTT_TAG, "Failed to publish binary message", e);
-            Toast.makeText(context, "Send error. Image saved locally", Toast.LENGTH_SHORT).show();
+            Logger.e(MQTT_TAG, "Failed to publish binary message");
+            toastWrapper.show( "Send error. Image saved locally");
         }
         saveImageLocally(payload);
     }
@@ -203,7 +210,7 @@ public class MqttHandler {
             fos.write(data);
             fos.close();
 
-            Log.d(MQTT_TAG, "Imagine saved locally: " + fileName);
+            Logger.d(MQTT_TAG, "Imagine saved locally: " + fileName);
         } catch (IOException e) {
             Log.e(MQTT_TAG, "Error saving image locally.", e);
         }
@@ -211,7 +218,7 @@ public class MqttHandler {
 
     void resendStoredImages(String topic) {
         File dir = new File(context.getFilesDir(), "offline_images");
-        Log.e(MQTT_TAG, dir.getPath());
+        Logger.e(MQTT_TAG, dir.getPath());
         if (!dir.exists()) return;
 
         File[] files = dir.listFiles();
@@ -221,10 +228,10 @@ public class MqttHandler {
             try {
                 byte[] data = Files.readAllBytes(file.toPath());
                 publishBinary(topic, data);
-                Toast.makeText(context, "Resent local image: " + file.getName(), Toast.LENGTH_SHORT).show();
+                toastWrapper.show("Resent local image: ");
                 //file.delete();
             } catch (IOException e) {
-                Log.e(MQTT_TAG, "Error reading file for resend", e);
+                Logger.e(MQTT_TAG, "Error reading file for resend");
             }
         }
     }
@@ -239,9 +246,9 @@ public class MqttHandler {
         for (File file : files) {
             boolean deleted = file.delete();
             if (deleted) {
-                Log.d(MQTT_TAG, "Deleted stored image: " + file.getName());
+                Logger.d(MQTT_TAG, "Deleted stored image: " + file.getName());
             } else {
-                Log.e(MQTT_TAG, "Failed to delete stored image: " + file.getName());
+                Logger.e(MQTT_TAG, "Failed to delete stored image: " + file.getName());
             }
         }
     }
@@ -251,11 +258,11 @@ public class MqttHandler {
     public void disconnect() {
         try {
             if (client != null && client.isConnected()) {
-                Log.d(MQTT_TAG, "Disconnecting from broker...");
+                Logger.d(MQTT_TAG, "Disconnecting from broker...");
                 client.disconnect();
-                Log.d(MQTT_TAG, "Disconnected from broker.");
+                Logger.d(MQTT_TAG, "Disconnected from broker.");
             } else {
-                Log.d(MQTT_TAG, "Client is not connected, no need to disconnect.");
+                Logger.d(MQTT_TAG, "Client is not connected, no need to disconnect.");
             }
         } catch (MqttException e) {
             Log.e(MQTT_TAG, "Error disconnecting from broker: " + e.getMessage());
@@ -265,29 +272,29 @@ public class MqttHandler {
 
     public void publish(String topic, String message) {
         try {
-            Log.d(MQTT_TAG, "Publishing message to topic: " + topic);
+            Logger.d(MQTT_TAG, "Publishing message to topic: " + topic);
             MqttMessage mqttMessage = new MqttMessage(message.getBytes());
             client.publish(topic, mqttMessage);
-            Log.d(MQTT_TAG, "Message published to topic: " + topic);
+            Logger.d(MQTT_TAG, "Message published to topic: " + topic);
         } catch (MqttException e) {
-            Log.e(MQTT_TAG, "Error publishing message: " + e.getMessage());
+            Logger.e(MQTT_TAG, "Error publishing message: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     public void subscribe(String topic) {
         try {
-            Log.d(MQTT_TAG, "Subscribing to topic: " + topic);
+            Logger.d(MQTT_TAG, "Subscribing to topic: " + topic);
             client.subscribe(topic, 0, (receivedTopic, mqttMessage) -> {
-                Log.d(MQTT_TAG, "Message received on topic: " + receivedTopic);
+                Logger.d(MQTT_TAG, "Message received on topic: " + receivedTopic);
                 if (messageListener != null) {
                     messageListener.messageArrived(receivedTopic, mqttMessage);
                 }
             });
-            Log.d(MQTT_TAG, "Subscribed to topic: " + topic);
-            Toast.makeText(context, "Subscribed to topic: " + topic, Toast.LENGTH_SHORT).show();
+            Logger.d(MQTT_TAG, "Subscribed to topic: " + topic);
+            toastWrapper.show( "Subscribed to topic: ");
         } catch (MqttException e) {
-            Log.e(MQTT_TAG, "Error subscribing to topic: " + e.getMessage());
+            Logger.e(MQTT_TAG, "Error subscribing to topic: " + e.getMessage());
             e.printStackTrace();
         }
     }

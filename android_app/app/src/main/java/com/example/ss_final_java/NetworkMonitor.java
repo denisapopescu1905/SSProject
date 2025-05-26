@@ -28,6 +28,13 @@ public class NetworkMonitor {
         registerNetworkCallback();
     }
 
+    // New constructor for testing with injected NetworkRequest
+    public NetworkMonitor(@NonNull Context context, MqttHandler mqttHandler, NetworkRequest networkRequest) {
+        this.mqttHandler = mqttHandler;
+        this.connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        //registerNetworkCallback(networkRequest);
+    }
+
     private void registerNetworkCallback() {
         NetworkRequest networkRequest = new NetworkRequest.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -36,15 +43,15 @@ public class NetworkMonitor {
         connectivityManager.registerNetworkCallback(networkRequest, new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(@NonNull Network network) {
-                Log.d(NETWORK_TAG, "Network Connected.");
+                Logger.d(NETWORK_TAG, "Network Connected.");
                 if (mqttHandler != null) {
                     mqttHandler.connect(BROKER, CLIENT_ID);
                     mqttHandler.setMessageListener((topic, message) -> {
                         String payload = new String(message.getPayload());
-                        Log.d(MQTT_TAG, "MQTT command received: " + payload);
+                        Logger.d(MQTT_TAG, "MQTT command received: " + payload);
 
                         if (payload.equalsIgnoreCase("capture") && currentMode == MainActivity.Mode.ON_DEMAND) {
-                            Log.d(MQTT_TAG, "Resend on Demand");
+                            Logger.d(MQTT_TAG, "Resend on Demand");
                             mqttHandler.resendStoredImages(RECV_TOPIC);
                         }
                     });
@@ -53,7 +60,7 @@ public class NetworkMonitor {
             }
             @Override
             public void onLost(@NonNull Network network) {
-                Log.d(NETWORK_TAG, "Network Disconnected.");
+                Logger.d(NETWORK_TAG, "Network Disconnected.");
                 mqttHandler.disconnect();
             }
         });

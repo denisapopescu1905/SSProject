@@ -1,7 +1,5 @@
 package com.example.ss_final_java;
 
-import static com.example.ss_final_java.MainActivity.BROKER;
-import static com.example.ss_final_java.MainActivity.CLIENT_ID;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -33,7 +31,7 @@ import java.io.File;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
-public class MqttHandlerTest {
+public class RMqttHandlerTest {
 
     private Context context;
     private MqttHandler mqttHandler;

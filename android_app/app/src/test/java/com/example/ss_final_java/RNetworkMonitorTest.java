@@ -1,7 +1,5 @@
 package com.example.ss_final_java;
 
-import static com.example.ss_final_java.MainActivity.BROKER;
-import static com.example.ss_final_java.MainActivity.CLIENT_ID;
 import static com.example.ss_final_java.MainActivity.RECV_TOPIC;
 import static com.example.ss_final_java.MainActivity.TOPIC;
 import static com.example.ss_final_java.MainActivity.currentMode;
@@ -27,7 +25,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
-public class NetworkMonitorTest {
+public class RNetworkMonitorTest {
 
     @Mock Context mockContext;
     @Mock ConnectivityManager mockConnectivityManager;

@@ -4,11 +4,9 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import android.Manifest;
-import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.Spinner;
 
 import org.junit.Before;
@@ -21,14 +19,11 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.Shadows;
 import org.robolectric.android.controller.ActivityController;
-import org.robolectric.shadows.ShadowActivity;
-import org.robolectric.shadows.ShadowApplication;
 
 import java.io.File;
-import java.util.Arrays;
 
 @RunWith(RobolectricTestRunner.class)
-public class MainActivityTest {
+public class RMainActivityTest {
 
     @Mock
     MqttHandler mockMqttHandler;
