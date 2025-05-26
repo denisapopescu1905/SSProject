@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">SS_Final_Java</string>
+    <string-array name="mode_options">
+        <item>None</item>
+        <item>On Demand</item>
+        <item>Periodic</item>
+        <item>Live</item>
+    </string-array>
 </resources>
+
