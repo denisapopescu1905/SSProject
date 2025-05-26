@@ -64,7 +64,7 @@ jobs:
 
       - name: 🔄 Run SBOM generation script
         run: |
-          chmod +x sbom/generate-sbom.sh
+          chmod +x sbom/sbom.sh
           ./sbom/sbom.sh
 
       - name: 📦 Upload SBOM artifacts
