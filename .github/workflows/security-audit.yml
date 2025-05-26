@@ -1,0 +1,27 @@
+name: Security Audit
+
+on: [push, pull_request]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r flask_backend/requirements.txt
+          pip install bandit pip-audit
+
+      - name: Run Bandit
+        run: bandit -r flask_backend/
+
+      - name: Run pip-audit
+        run: pip-audit
