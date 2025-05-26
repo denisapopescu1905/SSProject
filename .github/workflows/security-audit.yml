@@ -32,7 +32,7 @@ jobs:
       - name: 🔍 Run Bandit with Custom Config
         run: |
           echo "Running Bandit..."
-          bandit -c sast/bandit.yaml flask_backend/
+          bandit -r -c sast/bandit.yaml flask_backend/
           echo "--- Bandit output complete ---"
           ls -la bandit-report.html || echo "❌ bandit-report.html not found"
         continue-on-error: true
