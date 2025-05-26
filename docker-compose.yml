@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  android_app:
+    build: ./android_app
+    image: denisadocker/android-app:latest
+    # alte configurări dacă ai nevoie
+
+  mosquitto:
+    build: ./mqtt-pipeline/mqtt
+    image: denisadocker/mosquitto:latest
+    ports:
+      - "1883:1883"
+    # alte configurări dacă ai nevoie
